@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/((?!assets|photos|audio|favicon.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
