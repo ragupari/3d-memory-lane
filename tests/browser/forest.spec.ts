@@ -10,10 +10,10 @@ test("desktop journey: enter, wheel, revisit, inspect, reload and sound", async 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: "Enter the Memory Forest" }),
+    page.getByRole("button", { name: "Begin Our Walk" }),
   ).toBeEnabled();
   await page.screenshot({ path: "test-results/desktop-intro.png" });
-  await page.getByRole("button", { name: "Enter the Memory Forest" }).click();
+  await page.getByRole("button", { name: "Begin Our Walk" }).click();
   await page.waitForTimeout(1700);
   const initialSeed = await page.evaluate(
     () =>
@@ -21,12 +21,14 @@ test("desktop journey: enter, wheel, revisit, inspect, reload and sound", async 
         .seed as number,
   );
   const first = generatePhotoLayout(photos, initialSeed)[0];
-  const camera = new PerspectiveCamera(64, 1440 / 900, 0.1, 85);
+  const camera = new PerspectiveCamera(64, 1440 / 900, 0.1, 95);
   camera.position.set(0, 1.75, 2);
   camera.updateMatrixWorld();
-  const projected = new Vector3(first.x, first.y, -first.distance).project(
-    camera,
-  );
+  const projected = new Vector3(
+    first.worldX,
+    first.y,
+    first.worldZ,
+  ).project(camera);
   await page.mouse.click((projected.x + 1) * 720, (1 - projected.y) * 450);
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -52,11 +54,11 @@ test("desktop journey: enter, wheel, revisit, inspect, reload and sound", async 
   await page.keyboard.down("s");
   await page.waitForTimeout(1600);
   await page.keyboard.up("s");
-  await page.getByRole("button", { name: "Play forest ambience" }).click();
+  await page.getByRole("button", { name: "Play romantic ambience" }).click();
   await expect(
-    page.getByRole("button", { name: "Mute forest ambience" }),
+    page.getByRole("button", { name: "Mute romantic ambience" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Mute forest ambience" }).click();
+  await page.getByRole("button", { name: "Mute romantic ambience" }).click();
   await page.waitForTimeout(1600);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("memory-forest.journey.v1")!),
@@ -80,7 +82,7 @@ test("mobile, instructions, reduced motion and completion", async ({
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.screenshot({ path: "test-results/mobile-intro.png" });
-  await page.getByRole("button", { name: "Enter the Memory Forest" }).click();
+  await page.getByRole("button", { name: "Begin Our Walk" }).click();
   const touch = await page.context().newCDPSession(page);
   await touch.send("Input.dispatchTouchEvent", {
     type: "touchStart",

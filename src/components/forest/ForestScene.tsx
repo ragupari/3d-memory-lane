@@ -5,6 +5,7 @@ import { ForestEnvironment } from "./ForestEnvironment";
 import { HangingPhoto } from "./HangingPhoto";
 import { CameraController, type NavigationState } from "./CameraController";
 import type { MemoryPhoto } from "../../types/memory";
+
 class SceneBoundary extends Component<
   { children: ReactNode; fallback: ReactNode; onFailure: () => void },
   { failed: boolean }
@@ -20,6 +21,7 @@ class SceneBoundary extends Component<
     return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
+
 export default function ForestScene({
   nav,
   active,
@@ -45,7 +47,7 @@ export default function ForestScene({
   return (
     <SceneBoundary fallback={fallback} onFailure={onFailure}>
       <Canvas
-        camera={{ position: [0, 1.75, 2], fov: 64, near: 0.1, far: 85 }}
+        camera={{ position: [0, 1.75, 2], fov: 64, near: 0.1, far: 110 }}
         dpr={dpr}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         fallback={fallback}
@@ -55,7 +57,7 @@ export default function ForestScene({
           });
           gl.domElement.setAttribute(
             "aria-label",
-            "Memory Forest. Use the controls below to move and inspect nearby memories.",
+            "Pont d'Amour Parisian Bridge. Use the controls below to stroll along the bridge and inspect nearby memories.",
           );
           onReady();
         }}
@@ -63,7 +65,11 @@ export default function ForestScene({
         <PerformanceMonitor onDecline={() => setDpr(1)}>
           <AdaptiveDpr pixelated />
         </PerformanceMonitor>
-        <ForestEnvironment zone={nav.zone} reduced={reduced} />
+        <ForestEnvironment
+          zone={nav.zone}
+          reduced={reduced}
+          maxDistance={nav.length}
+        />
         <CameraController
           nav={nav}
           active={active}

@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, Frustum, Matrix4, PerspectiveCamera } from "three";
 import { visibleMemories } from "../../utils/journey";
 import type { PlacedMemory } from "../../types/memory";
+
 export interface NavigationState {
   distance: React.RefObject<number>;
   target: React.RefObject<number>;
@@ -12,6 +13,7 @@ export interface NavigationState {
   layout: PlacedMemory[];
   discover: (ids: string[]) => void;
 }
+
 export function CameraController({
   nav,
   active,
@@ -31,12 +33,14 @@ export function CameraController({
     c.fov = size.width < 600 ? 88 : 64;
     c.updateProjectionMatrix();
   }, [camera, size.width]);
+
   const keys = useRef(new Set<string>());
   const look = useRef({ x: 0, y: 0 });
   const lastCheck = useRef(0);
   const frustum = useRef(new Frustum());
   const matrix = useRef(new Matrix4());
   const point = useRef(new Vector3());
+
   useEffect(() => {
     if (!active) {
       keys.current.clear();
@@ -69,9 +73,12 @@ export function CameraController({
       nav.target.current = nav.distance.current;
     };
     const pointer = (e: PointerEvent) => {
-      if (e.pointerType === "mouse") {
-        look.current.x = (e.clientX / innerWidth - 0.5) * 0.48;
-        look.current.y = (e.clientY / innerHeight - 0.5) * 0.16;
+      if (e.pointerType === "mouse" || e.pointerType === "pen") {
+        const nx = e.clientX / innerWidth - 0.5;
+        const ny = e.clientY / innerHeight - 0.5;
+        look.current.x = nx * 0.42;
+        // Pointing up (ny < 0) tilts camera upward up to ~42° so the top of the Eiffel Tower is in full view
+        look.current.y = ny < 0 ? ny * 1.48 : ny * 0.32;
       }
     };
     const touchStart = (e: TouchEvent) => {
@@ -92,8 +99,8 @@ export function CameraController({
       else
         look.current.x = MathUtils.clamp(
           look.current.x - dx * 0.003,
-          -0.4,
-          0.4,
+          -0.35,
+          0.35,
         );
       touch = { x: t.clientX, y: t.clientY };
     };
@@ -115,7 +122,8 @@ export function CameraController({
       window.removeEventListener("blur", clear);
       document.removeEventListener("visibilitychange", clear);
     };
-  }, [active, gl, nav.distance, nav.target, nav.length]);
+  }, [active, gl, nav]);
+
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.05);
     const previous = nav.distance.current;
@@ -138,7 +146,7 @@ export function CameraController({
     }
     const d = nav.distance.current;
     camera.position.set(
-      Math.sin(d * 0.055) * 0.18,
+      Math.sin(d * 0.055) * 0.14,
       1.75 + (reduced ? 0 : Math.sin(d * 2.3) * 0.014),
       2 - d,
     );

@@ -155,3 +155,71 @@ describe("camera discovery on real perspective projections", () => {
     expect(seen.size).toBe(layout.length);
   });
 });
+
+import {
+  getActivePathAtDistance,
+  getPathJunctions,
+  getPathSegments,
+} from "../src/utils/journey";
+import { photos as manifestPhotos, romanticPaths } from "../src/data/photos";
+
+describe("interconnected romantic paths and multimedia memories", () => {
+  it("groups event memories into their corresponding interconnected paths", () => {
+    const layout = generatePhotoLayout(manifestPhotos, 99);
+    const segments = getPathSegments(layout);
+    expect(segments).toHaveLength(4);
+    expect(segments.map((s) => s.pathId)).toEqual([
+      "paris-path",
+      "taj-path",
+      "kyoto-path",
+      "venice-path",
+    ]);
+    for (const seg of segments) {
+      expect(seg.memories.length).toBeGreaterThan(0);
+      expect(seg.memories.every((m) => m.photo.pathId === seg.pathId)).toBe(
+        true,
+      );
+      expect(
+        getActivePathAtDistance(layout, seg.memories[0].distance),
+      ).toBe(seg.pathId);
+    }
+    const junctions = getPathJunctions(layout);
+    expect(junctions).toHaveLength(4);
+    for (const p of romanticPaths) {
+      expect(p.connectedPaths.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("includes photos, short videos, and audio clips with title, description, and time", () => {
+    const types = new Set(manifestPhotos.map((p) => p.type ?? "photo"));
+    expect(types.has("photo")).toBe(true);
+    expect(types.has("video")).toBe(true);
+    expect(types.has("audio")).toBe(true);
+    for (const item of manifestPhotos) {
+      expect(item.title).toBeTruthy();
+      expect(item.description).toBeTruthy();
+      expect(item.time).toBeTruthy();
+      if (item.type === "video") expect(item.videoSrc).toBeTruthy();
+      if (item.type === "audio") expect(item.audioSrc).toBeTruthy();
+    }
+  });
+});
+
+import {
+  computeMeshPose,
+  MESH_BRIDGE_SPANS,
+  MESH_NODES,
+} from "../src/utils/journey";
+
+describe("single straight Parisian bridge path aligned with Eiffel Tower", () => {
+  it("keeps the bridge path straight and centered facing the tower", () => {
+    expect(MESH_NODES.length).toBeGreaterThanOrEqual(2);
+    expect(MESH_BRIDGE_SPANS).toHaveLength(1);
+    for (const d of [0, 5, 22, 45]) {
+      const pose = computeMeshPose(d);
+      expect(pose.x).toBe(0);
+      expect(pose.z).toBe(-d);
+      expect(pose.yaw).toBe(0);
+    }
+  });
+});

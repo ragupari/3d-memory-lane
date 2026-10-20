@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { X, Leaf, ArrowRight } from "lucide-react";
+import { X, Heart, ArrowRight } from "lucide-react";
 export function HelpDialog({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -29,13 +29,18 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
       >
         <X size={19} />
       </button>
-      <Leaf size={27} strokeWidth={1} />
+      <Heart size={27} strokeWidth={1.2} />
       <span className="eyebrow">THERE’S NO HURRY HERE</span>
-      <h2 id="help-title">Find your own pace.</h2>
-      <p>Follow the path. Let the little moments find you.</p>
+      <h2 id="help-title" className="cursive-heading">
+        Find Your Own Pace
+      </h2>
+      <p>
+        Stroll along the bridge toward the Eiffel Tower and let every moment
+        find you.
+      </p>
       <dl>
         <div>
-          <dt>Move forward & back</dt>
+          <dt>Walk forward & back</dt>
           <dd>Scroll · W / S · ↑ / ↓</dd>
         </div>
         <div>
@@ -47,8 +52,8 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           <dd>Move your mouse · Drag sideways</dd>
         </div>
         <div>
-          <dt>Open a memory</dt>
-          <dd>Click a photo or its title</dd>
+          <dt>Photos, videos & audio</dt>
+          <dd>Click a frame or Listen button</dd>
         </div>
         <div>
           <dt>Auto walk</dt>
@@ -60,8 +65,8 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         </div>
       </dl>
       <p className="help-small">
-        Your journey is saved on this device. Every photograph appears once, and
-        you can always walk back.
+        Your walk is saved on this device. Memories gently shimmer and fade as
+        you stroll along the bridge.
       </p>
       <button className="primary-button" onClick={onClose}>
         Let’s wander
