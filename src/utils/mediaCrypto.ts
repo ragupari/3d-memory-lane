@@ -22,7 +22,9 @@ export interface EncryptedManifest {
 
 let manifestPromise: Promise<EncryptedManifest> | null = null;
 let activeCryptoKey: CryptoKey | null = null;
+const encryptedBufferCache = new Map<string, Promise<ArrayBuffer>>();
 const decryptedBlobUrlCache = new Map<string, Promise<string>>();
+const unlockListeners = new Set<() => void>();
 
 function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   const binary = window.atob(b64);
@@ -32,6 +34,20 @@ function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes;
+}
+
+function fetchEncryptedBytes(encPath: string): Promise<ArrayBuffer> {
+  const existing = encryptedBufferCache.get(encPath);
+  if (existing) return existing;
+  const p = fetch(encPath).then((res) => {
+    if (!res.ok) {
+      throw new Error(`Failed to fetch encrypted media: ${encPath}`);
+    }
+    return res.arrayBuffer();
+  });
+  p.catch(() => encryptedBufferCache.delete(encPath));
+  encryptedBufferCache.set(encPath, p);
+  return p;
 }
 
 export function fetchEncryptedManifest(): Promise<EncryptedManifest> {
@@ -44,12 +60,28 @@ export function fetchEncryptedManifest(): Promise<EncryptedManifest> {
       }
       return res.json() as Promise<EncryptedManifest>;
     });
+    // Pre-fetch the encrypted BGM bytes so decryption is instantaneous on unlock
+    manifestPromise
+      .then((m) => {
+        const bgmEntry = m.files["/audio/bgm.mp3"];
+        if (bgmEntry) {
+          void fetchEncryptedBytes(bgmEntry.encPath);
+        }
+      })
+      .catch(() => {});
   }
   return manifestPromise;
 }
 
 export function isMediaUnlocked(): boolean {
   return activeCryptoKey !== null;
+}
+
+export function onMediaUnlocked(listener: () => void): () => void {
+  unlockListeners.add(listener);
+  return () => {
+    unlockListeners.delete(listener);
+  };
 }
 
 /**
@@ -100,6 +132,7 @@ export async function unlockWithPasscode(rawInput: string): Promise<boolean> {
     }
 
     activeCryptoKey = derivedKey;
+    unlockListeners.forEach((fn) => fn());
     return true;
   } catch {
     return false;
@@ -132,11 +165,7 @@ export async function getDecryptedMediaUrl(webPath?: string): Promise<string> {
       throw new Error("Media is locked.");
     }
 
-    const res = await fetch(entry.encPath);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch encrypted media: ${entry.encPath}`);
-    }
-    const encryptedBuffer = await res.arrayBuffer();
+    const encryptedBuffer = await fetchEncryptedBytes(entry.encPath);
 
     const decryptedBuffer = await window.crypto.subtle.decrypt(
       {
@@ -165,6 +194,15 @@ export async function getDecryptedMediaUrl(webPath?: string): Promise<string> {
  */
 export function useDecryptedUrl(webPath?: string): string {
   const [url, setUrl] = useState<string>("");
+  const [unlockedTick, setUnlockedTick] = useState(() =>
+    isMediaUnlocked() ? 1 : 0,
+  );
+
+  useEffect(() => {
+    return onMediaUnlocked(() => {
+      setUnlockedTick((n) => n + 1);
+    });
+  }, []);
 
   useEffect(() => {
     if (!webPath || !activeCryptoKey) {
@@ -182,7 +220,7 @@ export function useDecryptedUrl(webPath?: string): string {
     return () => {
       cancelled = true;
     };
-  }, [webPath]);
+  }, [webPath, unlockedTick]);
 
   return url;
 }

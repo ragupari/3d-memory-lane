@@ -520,7 +520,12 @@ export default function App() {
           )}
         </div>
         <div className="footer-actions">
-          {entered && <AudioControl />}
+          <AudioControl
+            ducked={Boolean(
+              selected &&
+                (selected.type === "video" || selected.type === "audio"),
+            )}
+          />
           {document.fullscreenEnabled && (
             <button
               className="icon-button fullscreen"
