@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
+import { useDecryptedUrl } from "../../utils/mediaCrypto";
 
 export function AudioControl() {
   const ref = useRef<HTMLAudioElement>(null);
   const [enabled, setEnabled] = useState(true);
   const [error, setError] = useState(false);
   const enabledRef = useRef(true);
+  const bgmUrl = useDecryptedUrl("/audio/bgm.mp3");
 
   useEffect(() => {
     enabledRef.current = enabled;
@@ -55,7 +57,7 @@ export function AudioControl() {
       window.removeEventListener("touchstart", onFirstGesture);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, []);
+  }, [bgmUrl]);
 
   const toggle = async () => {
     const audio = ref.current;
@@ -84,9 +86,11 @@ export function AudioControl() {
     }
   };
 
+  if (!bgmUrl) return null;
+
   return (
     <>
-      <audio ref={ref} src="/audio/bgm.mp3" loop preload="auto" autoPlay />
+      <audio ref={ref} src={bgmUrl} loop preload="auto" autoPlay />
       <button
         className="sound-control"
         onClick={() => void toggle()}

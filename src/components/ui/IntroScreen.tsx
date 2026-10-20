@@ -9,6 +9,10 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from "react";
+import {
+  fetchEncryptedManifest,
+  unlockWithPasscode,
+} from "../../utils/mediaCrypto";
 
 const ROMANTIC_DENIALS = [
   "This bridge of memories was built for one heart alone — only my dearest may cross beneath these golden lights.",
@@ -29,16 +33,30 @@ export function IntroScreen({
   enterRef: RefObject<HTMLButtonElement | null>;
   onEnter: () => void;
 }) {
+  const [keyLength, setKeyLength] = useState(4);
   const [letters, setLetters] = useState<string[]>(["", "", "", ""]);
   const [deniedMessage, setDeniedMessage] = useState<string | null>(null);
   const [denyCount, setDenyCount] = useState(0);
   const [unlocked, setUnlocked] = useState(false);
-  const slotRefs = useRef<(HTMLInputElement | null)[]>([
-    null,
-    null,
-    null,
-    null,
-  ]);
+  const [verifying, setVerifying] = useState(false);
+  const slotRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    fetchEncryptedManifest()
+      .then((manifest) => {
+        if (manifest.keyLength && manifest.keyLength > 0) {
+          setKeyLength(manifest.keyLength);
+          setLetters((prev) =>
+            prev.length === manifest.keyLength
+              ? prev
+              : Array.from({ length: manifest.keyLength }, () => ""),
+          );
+        }
+      })
+      .catch(() => {
+        /* Keep default 4-letter slots */
+      });
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -47,23 +65,27 @@ export function IntroScreen({
     return () => window.clearTimeout(timer);
   }, []);
 
-  const evaluateCode = (currentLetters: string[]) => {
+  const evaluateCode = async (currentLetters: string[]) => {
+    if (verifying) return;
     const word = currentLetters.join("").trim().toUpperCase();
-    if (word.length < 4) {
+    if (word.length < keyLength) {
       setDeniedMessage(
-        "Whisper all four letters of your name to step onto our bridge of memories.",
+        "Whisper every letter of your name to unlock and step onto our bridge of memories.",
       );
       setDenyCount((c) => c + 1);
       return;
     }
-    if (word === "AMMU") {
+
+    setVerifying(true);
+    const valid = await unlockWithPasscode(word);
+    setVerifying(false);
+
+    if (valid) {
       setDeniedMessage(null);
       setUnlocked(true);
-      if (ready) {
-        window.setTimeout(() => {
-          onEnter();
-        }, 320);
-      }
+      window.setTimeout(() => {
+        onEnter();
+      }, 280);
     } else {
       setUnlocked(false);
       setDeniedMessage(ROMANTIC_DENIALS[denyCount % ROMANTIC_DENIALS.length]);
@@ -72,18 +94,18 @@ export function IntroScreen({
   };
 
   const handleChange = (index: number, rawValue: string) => {
-    const char = rawValue.replace(/[^a-zA-Z]/g, "").slice(-1).toUpperCase();
+    const char = rawValue.replace(/[^a-zA-Z0-9]/g, "").slice(-1).toUpperCase();
     const next = [...letters];
     next[index] = char;
     setLetters(next);
     if (deniedMessage) setDeniedMessage(null);
 
-    if (char && index < 3) {
+    if (char && index < keyLength - 1) {
       slotRefs.current[index + 1]?.focus();
     }
 
-    if (char && index === 3 && next.every((c) => c.length === 1)) {
-      evaluateCode(next);
+    if (char && index === keyLength - 1 && next.every((c) => c.length === 1)) {
+      void evaluateCode(next);
     }
   };
 
@@ -105,12 +127,12 @@ export function IntroScreen({
     } else if (e.key === "ArrowLeft" && index > 0) {
       e.preventDefault();
       slotRefs.current[index - 1]?.focus();
-    } else if (e.key === "ArrowRight" && index < 3) {
+    } else if (e.key === "ArrowRight" && index < keyLength - 1) {
       e.preventDefault();
       slotRefs.current[index + 1]?.focus();
     } else if (e.key === "Enter") {
       e.preventDefault();
-      evaluateCode(letters);
+      void evaluateCode(letters);
     }
   };
 
@@ -118,25 +140,22 @@ export function IntroScreen({
     e.preventDefault();
     const pasted = e.clipboardData
       .getData("text")
-      .replace(/[^a-zA-Z]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
       .toUpperCase()
-      .slice(0, 4);
+      .slice(0, keyLength);
     if (!pasted) return;
-    const next = ["", "", "", ""];
-    for (let i = 0; i < pasted.length; i++) {
-      next[i] = pasted[i];
-    }
+    const next = Array.from({ length: keyLength }, (_, i) => pasted[i] ?? "");
     setLetters(next);
-    const focusIdx = Math.min(3, pasted.length);
+    const focusIdx = Math.min(keyLength - 1, pasted.length);
     slotRefs.current[focusIdx]?.focus();
-    if (pasted.length === 4) {
-      evaluateCode(next);
+    if (pasted.length === keyLength) {
+      void evaluateCode(next);
     }
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    evaluateCode(letters);
+    void evaluateCode(letters);
   };
 
   return (

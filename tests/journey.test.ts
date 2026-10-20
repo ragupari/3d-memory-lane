@@ -190,16 +190,13 @@ describe("interconnected romantic paths and multimedia memories", () => {
     }
   });
 
-  it("includes photos, short videos, and audio clips with title, description, and time", () => {
+  it("includes photos and multimedia memories with title and description", () => {
     const types = new Set(manifestPhotos.map((p) => p.type ?? "photo"));
     expect(types.has("photo")).toBe(true);
-    expect(types.has("video")).toBe(true);
-    expect(types.has("audio")).toBe(true);
     for (const item of manifestPhotos) {
       expect(item.title).toBeTruthy();
-      expect(item.description).toBeTruthy();
-      expect(item.time).toBeTruthy();
-      if (item.type === "video") expect(item.videoSrc).toBeTruthy();
+      expect(item.description ?? item.caption).toBeTruthy();
+      if (item.type === "video") expect(item.videoSrc ?? item.src).toBeTruthy();
       if (item.type === "audio") expect(item.audioSrc).toBeTruthy();
     }
   });

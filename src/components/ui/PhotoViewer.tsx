@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Calendar, Play, Pause } from "lucide-react";
 import type { MemoryPhoto } from "../../types/memory";
+import { useDecryptedUrl } from "../../utils/mediaCrypto";
 
 export function PhotoViewer({
   photo,
@@ -18,6 +19,22 @@ export function PhotoViewer({
 
   const mediaType = photo.type ?? "photo";
   const descriptionText = photo.description ?? photo.caption;
+
+  const hasSeparatePoster =
+    mediaType !== "video" ||
+    (Boolean(photo.src) &&
+      photo.src !== photo.videoSrc &&
+      !/\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(photo.src));
+
+  const decryptedImgUrl = useDecryptedUrl(
+    hasSeparatePoster ? photo.src : undefined,
+  );
+  const decryptedVideoUrl = useDecryptedUrl(
+    mediaType === "video" ? (photo.videoSrc ?? photo.src) : undefined,
+  );
+  const decryptedAudioUrl = useDecryptedUrl(
+    mediaType === "audio" ? photo.audioSrc : undefined,
+  );
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -83,12 +100,9 @@ export function PhotoViewer({
             </p>
           ) : (
             <>
-              {(mediaType !== "video" ||
-                (photo.src &&
-                  photo.src !== photo.videoSrc &&
-                  !/\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(photo.src))) && (
+              {hasSeparatePoster && decryptedImgUrl && (
                 <img
-                  src={photo.src}
+                  src={decryptedImgUrl}
                   alt={photo.title ?? "A cherished memory"}
                   onError={() => {
                     if (mediaType !== "video") setFailed(true);
@@ -98,15 +112,13 @@ export function PhotoViewer({
                   }
                 />
               )}
-              {mediaType === "video" && photo.videoSrc && (
+              {mediaType === "video" && decryptedVideoUrl && (
                 <video
                   className="viewer-video"
-                  src={photo.videoSrc}
+                  src={decryptedVideoUrl}
                   poster={
-                    photo.src &&
-                    photo.src !== photo.videoSrc &&
-                    !/\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(photo.src)
-                      ? photo.src
+                    hasSeparatePoster && decryptedImgUrl
+                      ? decryptedImgUrl
                       : undefined
                   }
                   onError={() => setFailed(true)}
@@ -116,11 +128,11 @@ export function PhotoViewer({
                   playsInline
                 />
               )}
-              {mediaType === "audio" && photo.audioSrc && (
+              {mediaType === "audio" && decryptedAudioUrl && (
                 <div className="viewer-audio-overlay">
                   <audio
                     ref={audioRef}
-                    src={photo.audioSrc}
+                    src={decryptedAudioUrl}
                     onTimeUpdate={() => {
                       const el = audioRef.current;
                       if (!el) return;

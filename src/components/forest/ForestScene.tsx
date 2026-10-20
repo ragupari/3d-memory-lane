@@ -24,6 +24,7 @@ class SceneBoundary extends Component<
 
 export default function ForestScene({
   nav,
+  unlocked,
   active,
   auto,
   reduced,
@@ -34,6 +35,7 @@ export default function ForestScene({
   fallback,
 }: {
   nav: NavigationState;
+  unlocked: boolean;
   active: boolean;
   auto: boolean;
   reduced: boolean;
@@ -77,23 +79,25 @@ export default function ForestScene({
           reduced={reduced}
           onEnd={onEnd}
         />
-        <Suspense fallback={null}>
-          {nav.layout
-            .filter(
-              (p) =>
-                p.distance > nav.zone * 8 - 12 &&
-                p.distance < nav.zone * 8 + 45,
-            )
-            .map((item) => (
-              <HangingPhoto
-                key={item.photo.id}
-                item={item}
-                reduced={reduced}
-                onSelect={onSelect}
-                enabled={active}
-              />
-            ))}
-        </Suspense>
+        {unlocked && (
+          <Suspense fallback={null}>
+            {nav.layout
+              .filter(
+                (p) =>
+                  p.distance > nav.zone * 8 - 12 &&
+                  p.distance < nav.zone * 8 + 45,
+              )
+              .map((item) => (
+                <HangingPhoto
+                  key={item.photo.id}
+                  item={item}
+                  reduced={reduced}
+                  onSelect={onSelect}
+                  enabled={active}
+                />
+              ))}
+          </Suspense>
+        )}
       </Canvas>
     </SceneBoundary>
   );

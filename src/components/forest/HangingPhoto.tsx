@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Line, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import type { MemoryPhoto, PlacedMemory } from "../../types/memory";
+import { useDecryptedUrl } from "../../utils/mediaCrypto";
 
 const VIDEO_EXT_RE = /\.(mp4|webm|mov|ogg)(\?.*)?$/i;
 
@@ -24,9 +25,12 @@ function PhotoPrint({
     height: number;
   } | null>(null);
 
-  const effectiveVideoSrc =
+  const rawVideoPath =
     videoSrc ?? (VIDEO_EXT_RE.test(src) ? src : undefined);
-  const imageSrc = VIDEO_EXT_RE.test(src) ? undefined : src;
+  const rawImagePath = VIDEO_EXT_RE.test(src) ? undefined : src;
+
+  const imageSrc = useDecryptedUrl(rawImagePath);
+  const effectiveVideoSrc = useDecryptedUrl(rawVideoPath);
 
   useEffect(() => {
     if (!imageSrc) {
