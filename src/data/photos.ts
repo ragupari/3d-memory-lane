@@ -122,7 +122,7 @@ export const photos: MemoryPhoto[] = [
     caption:
       "It’s not the saree that’s gorgeous, it’s you who made the saree look good.",
     time: "04:42 PM · River Breeze",
-    date: "2024-10-14",
+    date: "",
     location: "Pont Alexandre III, Paris",
   },
   // {
@@ -158,7 +158,7 @@ export const photos: MemoryPhoto[] = [
     caption:
       "On New Year at Nallur, you passed me so close, I wanted to tap you on the shoulder and say hi, but I didn’t. You looked so beautiful and elegant in that red top.”",
     time: "05:20 PM · Rose Terrace",
-    date: "2024-11-22",
+    date: "",
     location: "West Rose Bridge, Paris",
   },
   // {
@@ -212,7 +212,7 @@ export const photos: MemoryPhoto[] = [
     caption:
       "We’re long distance, so we fantasised about being together and made AI-generated pics of us. Yes, I was cringe, but cringe is good.",
     time: "06:20 PM · Golden Breeze",
-    date: "2025-04-03",
+    date: "",
     location: "East Cross-Bridge, Paris",
   },
   // {
@@ -403,5 +403,20 @@ export const photos: MemoryPhoto[] = [
     time: "08:00 PM · Belvedere Serenade",
     date: "",
     location: "Champ de Mars Belvedere, Paris",
+  },{
+    id: "13",
+    type: "photo",
+    pathId: "venice-path",
+    event: "",
+    src: "/photos/13.jpeg",
+    thumbnail: "/photos/13.jpeg",
+    title: "My Heart as Her Throne",
+    description:
+      "She is my cute little tyrant, ruling my heart as her dynasty.",
+    caption:
+      "She is my cute little tyrant, ruling my heart as her dynasty.",
+    time: "07:15 PM · Golden Horizon",
+    date: "",
+    location: "Eiffel Belvedere, Paris",
   },
 ];
